@@ -1,15 +1,56 @@
-//
-//  main.cpp
-//  Chaos Equations
-//
-//  Created by Andrew Wang on 2020-01-15.
-//  Copyright © 2020 Andrew Wang. All rights reserved.
-//
-
 #include <iostream>
 
-int main(int argc, const char * argv[]) {
-    // insert code here...
-    std::cout << "Hello, World!\n";
+// GLEW
+#define GLEW_STATIC
+#include <GL/glew.h>
+
+#include <GLFW/glfw3.h>
+
+const GLint WIDTH = 800, HEIGHT = 600;
+
+int main() {
+    glfwInit();
+    
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    
+    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL Test", nullptr, nullptr);
+    
+    int screenWidth, screenHeight;
+    // For Mac retina display
+    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        
+        return 1;
+    }
+    
+    glfwMakeContextCurrent(window);
+    
+    glewExperimental = GL_TRUE;
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        
+        return 1;
+    }
+    
+    glViewport(0, 0, screenWidth, screenHeight);
+    
+    // Main loop
+    while (!glfwWindowShouldClose(window)) {
+        glfwPollEvents();
+        
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        
+        glfwSwapBuffers(window);
+    }
+    
+    glfwTerminate();
     return 0;
 }
