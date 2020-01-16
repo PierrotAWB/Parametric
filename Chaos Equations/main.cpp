@@ -1,27 +1,21 @@
 #include <iostream>
-
-// GLEW
-#define GLEW_STATIC
 #include <GL/glew.h>
-
 #include <GLFW/glfw3.h>
 
-const GLint WIDTH = 800, HEIGHT = 600;
+#define SCREEN_WIDTH 640
+#define SCREEN_HEIGHT 480
+
+void updatePoint(GLfloat *point, float dampeningFactor, float t);
+
+float x, y;
 
 int main() {
-    glfwInit();
+    GLFWwindow *window;
     
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-    glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+    if (!glfwInit())
+        return 1;
     
-    GLFWwindow *window = glfwCreateWindow(WIDTH, HEIGHT, "OpenGL Test", nullptr, nullptr);
-    
-    int screenWidth, screenHeight;
-    // For Mac retina display
-    glfwGetFramebufferSize(window, &screenWidth, &screenHeight);
+    window = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGL Test", nullptr, nullptr);
     
     if (!window) {
         std::cerr << "Failed to create GLFW window" << std::endl;
@@ -32,25 +26,47 @@ int main() {
     
     glfwMakeContextCurrent(window);
     
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "Failed to initialize GLEW" << std::endl;
-        
-        return 1;
-    }
+    glViewport( 0.0f, 0.0f, SCREEN_WIDTH, SCREEN_HEIGHT ); // specifies the part of the window to which OpenGL will draw (in pixels), convert from normalised to pixels
+    glMatrixMode( GL_PROJECTION ); // projection matrix defines the properties of the camera that views the objects in the world coordinate frame. Here you typically set the zoom factor, aspect ratio and the near and far clipping planes
+    glLoadIdentity( ); // replace the current matrix with the identity matrix and starts us a fresh because matrix transforms such as glOrpho and glRotate cumulate, basically puts us at (0, 0, 0)
+    glOrtho( -SCREEN_WIDTH / 2, SCREEN_WIDTH / 2, -SCREEN_HEIGHT / 2, SCREEN_HEIGHT / 2, 0, 1 ); // essentially set coordinate system
+    glMatrixMode( GL_MODELVIEW ); // (default matrix mode) modelview matrix defines how your objects are transformed (meaning translation, rotation and scaling) in your world
+    glLoadIdentity( ); // same as above comment
     
-    glViewport(0, 0, screenWidth, screenHeight);
+    float t = -2;
+    x = y = t;
+    glClearColor(0.0, 0.0, 0.0, 1.0);
+    
+    GLfloat pointVertex[] = {0, 0};
     
     // Main loop
     while (!glfwWindowShouldClose(window)) {
-        glfwPollEvents();
-        
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
         
+        glEnable( GL_POINT_SMOOTH ); // make the point circular
+        glEnableClientState( GL_VERTEX_ARRAY ); // tell OpenGL that you're using a vertex array for fixed-function attribute
+        glPointSize( 10 ); // must be added before glDrawArrays is called
+        glVertexPointer( 2, GL_FLOAT, 0, pointVertex ); // point to the vertices to be used
+        glDrawArrays( GL_POINTS, 0, 1 ); // draw the vertixes
+        glDisableClientState( GL_VERTEX_ARRAY ); // tell OpenGL that you're finished using the vertex arrayattribute
+        glDisable( GL_POINT_SMOOTH ); // stop the smoothing to make the points circular
+        
+        updatePoint(pointVertex, 1, t);
+
+        t += 0.1;
         glfwSwapBuffers(window);
+        glfwPollEvents();
     }
     
     glfwTerminate();
     return 0;
+}
+
+
+void updatePoint(GLfloat *point, float dampeningFactor, float t) {
+    // passed by reference?
+    point[0] = dampeningFactor*(x*x + x*t + y);
+    point[1] = dampeningFactor*(x*x - y*y - t*t - x*y + y*t - x + y);
+    
+    std::cout << point[0] << " " << point[1] << std::endl;
 }
